@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     QAction *action_zoomout = new QAction;
     action_zoomout->setIcon(QIcon::fromTheme("zoom-out"));
-    action_zoomout->setToolTip("缩小");
+    action_zoomout->setToolTip("缩小 Ctrl-");
     action_zoomout->setShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_Minus));
     ui->mainToolBar->addAction(action_zoomout);
     comboBox_scale = new QComboBox;
@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->addWidget(comboBox_scale);
     QAction *action_zoomin = new QAction;
     action_zoomin->setIcon(QIcon::fromTheme("zoom-in"));
-    action_zoomin->setToolTip("放大");
+    action_zoomin->setToolTip("放大 Ctrl+");
     action_zoomin->setShortcuts(QList<QKeySequence>() << QKeySequence(Qt::ControlModifier + Qt::Key_Equal) << QKeySequence(Qt::ControlModifier + Qt::Key_Plus));
     ui->mainToolBar->addAction(action_zoomin);
     connect(action_zoomout, &QAction::triggered, [=](){
@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QAction *action_page_last = new QAction;
     action_page_last->setIcon(QIcon::fromTheme("media-skip-forward"));
-    action_page_last->setToolTip("上一页");
+    action_page_last->setToolTip("上一页 PageUp");
     action_page_last->setShortcut(QKeySequence(Qt::Key_PageUp));
     ui->mainToolBar->addAction(action_page_last);
     lineEdit_page_current = new QLineEdit("0");
@@ -67,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->mainToolBar->addWidget(label_page_total);
     QAction *action_page_next = new QAction;
     action_page_next->setIcon(QIcon::fromTheme("media-skip-backward"));
-    action_page_next->setToolTip("下一页");
+    action_page_next->setToolTip("下一页 PageDown");
     action_page_next->setShortcut(QKeySequence(Qt::Key_PageDown));
     ui->mainToolBar->addAction(action_page_next);
     connect(action_page_last, &QAction::triggered, [=](){
@@ -170,6 +170,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->action_quit, SIGNAL(triggered()), qApp, SLOT(quit()));
 
     readSettings();
+
+    QStringList SL_args = QApplication::arguments();
+    qDebug() << SL_args;
+    if(SL_args.length() > 1){
+        filepath = SL_args.at(1);
+        if(filepath.startsWith("file://")){
+            QUrl url(filepath);
+            filepath = url.toLocalFile();
+        }
+        if(QFileInfo(filepath).suffix().toLower() == "pdf")
+            load(filepath);
+    }
 }
 
 MainWindow::~MainWindow()
@@ -208,16 +220,16 @@ void MainWindow::readSettings()
 void MainWindow::on_action_open_triggered()
 {
     comboBox_scale->setCurrentText("100%");
-    filename = QFileDialog::getOpenFileName(this, "选择文件", filename, "pdf文件 (*.pdf)");
-    if (filename.isNull() || !filename.endsWith(".pdf"))
+    filepath = QFileDialog::getOpenFileName(this, "选择文件", filepath, "pdf文件 (*.pdf)");
+    if (filepath.isNull() || !filepath.endsWith(".pdf"))
         return;
-    setWindowTitle(QFileInfo(filename).fileName());
-    load(filename);
+    load(filepath);
 }
 
-void MainWindow::load(QString fileName)
+void MainWindow::load(QString filePath)
 {
-    document = Poppler::Document::load(fileName);
+    setWindowTitle(QFileInfo(filePath).fileName());
+    document = Poppler::Document::load(filePath);
     document->setRenderHint(Poppler::Document::Antialiasing, true);     //graphics
     document->setRenderHint(Poppler::Document::TextAntialiasing, true);
     lineEdit_page_current->setText("1");
@@ -225,7 +237,7 @@ void MainWindow::load(QString fileName)
     lineEdit_page_current->setValidator(&validator);
     label_page_total->setText(QString::number(document->numPages()));
     lineEdit_page_current->setFixedWidth(label_page_total->fontMetrics().width(QString::number(document->numPages()) + "****"));
-    zoom(1);   
+    zoom(1);
 }
 
 void MainWindow::zoom(double scale)
@@ -304,7 +316,7 @@ void MainWindow::on_action_export_current_page_to_image_triggered()
 
 void MainWindow::on_action_export_all_pages_to_images_triggered()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "保存图片", filename, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    QString dir = QFileDialog::getExistingDirectory(this, "保存图片", filepath, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (dir.isNull())
         return;
     double scale = comboBox_scale->currentText().replace("%","").toInt()/100.0;

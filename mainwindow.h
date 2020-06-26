@@ -27,12 +27,12 @@ protected:
     void closeEvent(QCloseEvent *event);
 
 private:
-    Ui::MainWindow *ui;    
+    Ui::MainWindow *ui;
     QLineEdit *lineEdit_page_current;
     QLabel *label_page_total;
-    QString filename;
+    QString filepath;
     QComboBox *comboBox_scale;
-    Poppler::Document *document;    
+    Poppler::Document *document;
     QList<QRectF> list_rectf_search;
     int index_search;
     QMatrix matrix() const;
@@ -49,7 +49,7 @@ private slots:
     void on_action_export_current_page_to_image_triggered();
     void on_action_export_all_pages_to_images_triggered();
     void on_action_aboutQt_triggered();
-    void on_action_about_triggered();    
+    void on_action_about_triggered();
 
 };
 
